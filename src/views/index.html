@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <title>Crypto-Signs</title>
+    <style>
+        body {
+            padding-bottom: 30px;
+            font-family: Roboto !important;
+        }
+
+        .alert {
+            background: #539a53;
+            display: grid;
+            place-items: center;
+            grid-template-columns: auto auto;
+            color: white;
+            font-size: 22px;
+            margin: 20px;
+            box-shadow: 3px 4px 5px #0000006b;
+        }
+
+        @keyframes example {
+            0% {background-color: #539a53;}
+            50% {background-color: #ce3939;}
+            100% {background-color: #539a53;}
+        }
+
+        .attention {
+            animation-name: example;
+            animation-duration: 500ms;
+            animation-iteration-count: 10;
+            background-color: #ce3939;
+        }
+
+        #app {
+            z-index: 1;
+            position: absolute;
+            display: grid;
+            place-items: center;
+            width: 100%;
+        }
+
+        #upper {
+            position: absolute;
+            top: 0;
+            background: #4f7fb1;
+            width: 100vw;
+            height: 60vh;
+            z-index: 0;
+            clip-path: polygon(0 0, 0 100%, 100% 77%, 100% 0);
+        }
+
+        .btn-primary {
+            font-size: 30px;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .form-control {
+            width: 50%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        #alerts-wrapper {
+            width: 80%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='app'>
+        <h1>crypto-signs</h1>
+        <input type="text" class="form-control" id="coin" value="BTC"><br>
+        <input type="text" class="form-control" id="currency" value="USD"><br>
+        <input type="text" class="form-control" id="limit" value="500"><br>
+        <button type="button" class="btn btn-primary" onclick="loadDoc()">Set alert</button>
+        <div id="alerts-wrapper"></div>
+    </div>
+    <div id='upper'></div>
+    <div id='lower'></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var userId = Date.now() + "";
+        socket.on('connect', () => socket.emit('ahoj', {userId}));
+        socket.on('alert', function (alert) {
+            var element = $(`#${alert.id}`);
+            if (element.length && element.attr("class").indexOf("attention") === -1) {
+                element.addClass("attention");
+                element.append(`<div>PRICE: ${alert.price}</div>`);
+            }
+        });
+    </script>
+    <script>
+        function loadDoc() {
+            var xhttp = new XMLHttpRequest();
+            var coin = document.getElementById('coin').value;
+            var currency = document.getElementById('currency').value;
+            var limit = document.getElementById('limit').value;
+            var id = coin + currency + limit;
+            if (!$(`#${id}`).length) {
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        $("#alerts-wrapper").append(`<div class='alert' id='${id}'><div>${coin} - ${limit}(${currency})</div></div>`);
+                    }
+                };
+                xhttp.open("PUT", `api/v1/alerts?pair=${coin}-${currency}&limit=${limit}`, true);
+                xhttp.setRequestHeader('userId', userId);
+                xhttp.send();
+            }
+        }
+    </script>
+</body>
+
+</html>
