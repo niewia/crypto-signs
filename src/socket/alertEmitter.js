@@ -1,13 +1,7 @@
 class alertEmitter {
 
-    constructor() {
-        this.interval = 5000;
-        this.users = new Map();
-        this.rooms = new Map();
-        this.alerts = new Map();
-    }
-
     init(io) {
+        this.initState();
         io.on('connection', (user) => {
             user.on('ahoj', userData => {
                 this.users.set(userData.userId, user);
@@ -31,39 +25,48 @@ class alertEmitter {
         });
     }
 
-    addAlert(alertGenerator, id, userId) {
-        const alertExists = this.alerts.get(id);
+    initState() {
+        this.interval = 5000;
+        this.users = new Map();
+        this.rooms = new Map();
+        this.alerts = new Map();
+    }
+
+    addAlert(alertGenerator, alertId, userId) {
+        const alertExists = this.alerts.get(alertId);
         if (!alertExists) {
             const alert = setInterval(() => {
                 alertGenerator().then(data => {
                     if (data) {
-                        this.emitAlert(id, data)
+                        this.emitAlert(alertId, data)
                     }
                 })
             }, this.interval);
-
-            this.alerts.set(id, alert);
-
-            if (this.rooms.has(id)) {
-                this.rooms.get(id).add(userId);
-            } else {
-                this.rooms.set(id, [userId])
-            }
+            this.alerts.set(alertId, alert);
         }
-        return id;
+        if (this.rooms.has(alertId)) {
+            this.rooms.get(alertId).push(userId);
+        } else {
+            this.rooms.set(alertId, [userId])
+        }
+        return alertId;
     }
 
-    removeAlert(coin, currency, limit, userId) {
-        const id = createId(coin, currency, limit);
-        const room = this.rooms.get(id);
-        const index = room.indexOf(userId);
-        room.splice(index, 1);
-        if (room.length === 0) {
-            const alert = this.alerts.get(id);
-            if (alert) {
-                clearInterval(alert);
+    removeAlert(alertId, userId) {
+        let removed = false;
+        const room = this.rooms.get(alertId);
+        if (room) {
+            const index = room.indexOf(userId);
+            room.splice(index, 1);
+            if (room.length === 0) {
+                const alert = this.alerts.get(alertId);
+                if (alert) {
+                    clearInterval(alert);
+                    removed = true;
+                }
             }
         }
+        return removed;
     }
 
     emitAlert(id, data) {

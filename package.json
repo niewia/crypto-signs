@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node src/app.js",
-    "test": "mocha --reporter dot test/**/*.js",
+    "test": "mocha test/unit/**/*test.js",
+    "test-integration": "mocha test/integration/**/*test.js --exit",
     "coverage": "nyc --reporter html --reporter text npm test"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "nyc": "^13.0.1",
-    "sinon": "^6.3.5"
+    "sinon": "^6.3.5",
+    "supertest": "^3.3.0"
   }
 }

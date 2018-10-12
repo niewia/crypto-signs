@@ -44,3 +44,5 @@ const server = app.listen(port, () => {
 const io = require('socket.io')(server);
 
 alertEmitter.init(io);
+
+module.exports = app;

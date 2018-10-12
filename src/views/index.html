@@ -16,6 +16,7 @@
         }
 
         .alert {
+            /* transition: 100ms all; */
             background: #539a53;
             display: grid;
             place-items: center;
@@ -24,17 +25,18 @@
             font-size: 22px;
             margin: 20px;
             box-shadow: 3px 4px 5px #0000006b;
+            position: relative;
         }
 
         @keyframes example {
-            0% {background-color: #539a53;}
-            50% {background-color: #ce3939;}
-            100% {background-color: #539a53;}
+            0% {background-color: #539a53; transform: rotate(1deg)}
+            50% {background-color: #ce3939; transform: rotate(-1deg)}
+            100% {background-color: #539a53; transform: rotate(1deg)}
         }
 
         .attention {
             animation-name: example;
-            animation-duration: 500ms;
+            animation-duration: 300ms;
             animation-iteration-count: 10;
             background-color: #ce3939;
         }
@@ -74,6 +76,23 @@
         #alerts-wrapper {
             width: 80%;
         }
+
+        .remove {
+            position: absolute;
+            right: -7px;
+            top: -8px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            transition: 200ms background;
+            background: inherit;
+        }
+
+        .remove:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
 
@@ -83,7 +102,7 @@
         <input type="text" class="form-control" id="coin" value="BTC"><br>
         <input type="text" class="form-control" id="currency" value="USD"><br>
         <input type="text" class="form-control" id="limit" value="500"><br>
-        <button type="button" class="btn btn-primary" onclick="loadDoc()">Set alert</button>
+        <button type="button" class="btn btn-primary" onclick="addAlert()">Set alert</button>
         <div id="alerts-wrapper"></div>
     </div>
     <div id='upper'></div>
@@ -92,7 +111,7 @@
     <script>
         var socket = io();
         var userId = Date.now() + "";
-        socket.on('connect', () => socket.emit('ahoj', {userId}));
+        socket.on('connect', () => socket.emit('ahoj', { userId }));
         socket.on('alert', function (alert) {
             var element = $(`#${alert.id}`);
             if (element.length && element.attr("class").indexOf("attention") === -1) {
@@ -102,7 +121,7 @@
         });
     </script>
     <script>
-        function loadDoc() {
+        function addAlert() {
             var xhttp = new XMLHttpRequest();
             var coin = document.getElementById('coin').value;
             var currency = document.getElementById('currency').value;
@@ -111,13 +130,29 @@
             if (!$(`#${id}`).length) {
                 xhttp.onreadystatechange = function () {
                     if (this.readyState == 4 && this.status == 200) {
-                        $("#alerts-wrapper").append(`<div class='alert' id='${id}'><div>${coin} - ${limit}(${currency})</div></div>`);
+                        $("#alerts-wrapper").append(`
+                        <div class='alert' id='${id}'>
+                            <div>${coin} - ${limit}(${currency})</div>
+                            <div class='remove' onClick='removeAlert("${coin}", "${currency}", ${limit})'>x</div>
+                        </div>`);
                     }
                 };
                 xhttp.open("PUT", `api/v1/alerts?pair=${coin}-${currency}&limit=${limit}`, true);
-                xhttp.setRequestHeader('userId', userId);
+                xhttp.setRequestHeader('authorization', userId);
                 xhttp.send();
             }
+        }
+        function removeAlert(coin, currency, limit) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var id = coin + currency + limit;
+                    $(`#${id}`).remove();
+                }
+            };
+            xhttp.open("DELETE", `api/v1/alerts?pair=${coin}-${currency}&limit=${limit}`, true);
+            xhttp.setRequestHeader('authorization', userId);
+            xhttp.send();
         }
     </script>
 </body>

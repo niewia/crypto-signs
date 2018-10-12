@@ -1,6 +1,6 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
-const alertEmitter = require('../../src/socket/alertEmitter');
+const alertEmitter = require('../../../src/socket/alertEmitter');
 
 describe('alertEmitter', function () {
 
@@ -73,17 +73,17 @@ describe('alertEmitter', function () {
     });
 
     it('should add new alert', function () {
-        alertEmitter.addAlert(alert, 'testAlertId', 'testUserId')
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId')
         assert.equal(alertEmitter.rooms.size, 1);
-        assert.equal(alertEmitter.rooms.get('testAlertId'), 'testUserId');
+        assert.equal(alertEmitter.rooms.get('BTCUSD500'), 'testUserId');
         assert.equal(alertEmitter.alerts.size, 1);
-        assert.isOk(alertEmitter.alerts.get('testAlertId'));
+        assert.isOk(alertEmitter.alerts.get('BTCUSD500'));
     });
 
     it('should remove unused alerts and rooms after disconnect', function () {
         io.fireEvent('connection', io)
         io.fireEvent('ahoj', {userId: 'testUserId'})
-        alertEmitter.addAlert(alert, 'testAlertId', 'testUserId')
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId')
         io.fireEvent('disconnect')
         assert.equal(alertEmitter.rooms.size, 0);
         assert.equal(alertEmitter.alerts.size, 0);
@@ -96,7 +96,7 @@ describe('alertEmitter', function () {
         alertEmitter.addAlert(() => {
             alertPromise = Promise.resolve("alert!");
             return alertPromise;
-        }, 'testAlertId', 'testUserId')
+        }, 'BTCUSD500', 'testUserId')
         clock.next();
         return alertPromise.then(() => {
             const emittedEventsData = io.getEmittedEventsData();
@@ -104,5 +104,31 @@ describe('alertEmitter', function () {
             assert.equal(emittedEventsData.length, 1);
             assert.equal(emittedEventsData[0], "alert!");
         })
+    });
+
+    it('should handle multiple users with same alert', function () {
+        const user1 = mockIo();
+        const user2 = mockIo();
+        io.fireEvent('connection', user1)
+        user1.fireEvent('ahoj', {userId: 'testUserId'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId')
+
+        io.fireEvent('connection', user2)
+        user2.fireEvent('ahoj', {userId: 'testUserId2'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId2')
+
+        assert.equal(alertEmitter.users.size, 2);
+        assert.equal(alertEmitter.rooms.size, 1);
+        assert.equal(alertEmitter.alerts.size, 1);
+
+        user1.fireEvent('disconnect')
+        assert.equal(alertEmitter.users.size, 1);
+        assert.equal(alertEmitter.rooms.size, 1);
+        assert.equal(alertEmitter.alerts.size, 1);
+
+        user2.fireEvent('disconnect')
+        assert.equal(alertEmitter.users.size, 0);
+        assert.equal(alertEmitter.rooms.size, 0);
+        assert.equal(alertEmitter.alerts.size, 0);
     });
 });
