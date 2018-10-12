@@ -6,7 +6,7 @@ describe('alertEmitter', function () {
 
     const mockIo = () => {
         const eventsMap = new Map();
-        const emittedEventsData = [];
+        const emittedAlertsData = [];
 
         return {
             on(eventName, fn) {
@@ -18,11 +18,13 @@ describe('alertEmitter', function () {
             },
 
             emit(eventName, data) {
-                emittedEventsData.push(data);
+                if (eventName === 'alert') {
+                    emittedAlertsData.push(data);
+                }
             },
 
-            getEmittedEventsData() {
-                return emittedEventsData;
+            getEmittedAlertsData() {
+                return emittedAlertsData;
             }
         }
     };
@@ -92,14 +94,14 @@ describe('alertEmitter', function () {
     it('should trigger alert notification', function () {
         io.fireEvent('connection', io)
         io.fireEvent('ahoj', {userId: 'testUserId'})
-        let alertPromise
+        let alertPromise;
         alertEmitter.addAlert(() => {
             alertPromise = Promise.resolve("alert!");
             return alertPromise;
         }, 'BTCUSD500', 'testUserId')
         clock.next();
         return alertPromise.then(() => {
-            const emittedEventsData = io.getEmittedEventsData();
+            const emittedEventsData = io.getEmittedAlertsData();
             assert.isOk(emittedEventsData);
             assert.equal(emittedEventsData.length, 1);
             assert.equal(emittedEventsData[0], "alert!");
