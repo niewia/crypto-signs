@@ -21,6 +21,8 @@ class alertEmitter {
                         }
                     })
                 });
+
+                user.emit('userSet', userData);
             })
         });
     }
@@ -59,9 +61,11 @@ class alertEmitter {
             const index = room.indexOf(userId);
             room.splice(index, 1);
             if (room.length === 0) {
+                this.rooms.delete(alertId);
                 const alert = this.alerts.get(alertId);
                 if (alert) {
                     clearInterval(alert);
+                    this.alerts.delete(alertId);
                     removed = true;
                 }
             }

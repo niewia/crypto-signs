@@ -131,4 +131,36 @@ describe('alertEmitter', function () {
         assert.equal(alertEmitter.rooms.size, 0);
         assert.equal(alertEmitter.alerts.size, 0);
     });
+
+    it('should remove user from room and alert after subscription canceled', function () {
+        io.fireEvent('connection', io)
+        io.fireEvent('ahoj', {userId: 'testUserId'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId')
+        
+        io.fireEvent('connection', io)
+        io.fireEvent('ahoj', {userId: 'testUserId2'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId2')
+
+        alertEmitter.removeAlert('BTCUSD500', 'testUserId');
+        assert.equal(alertEmitter.rooms.size, 1);
+        assert.isOk(alertEmitter.rooms.get('BTCUSD500'));
+        assert.equal(alertEmitter.rooms.get('BTCUSD500').length, 1);
+        assert.equal(alertEmitter.alerts.size, 1);
+    });
+
+    it('should remove empty room and cancel alert after no subscribers', function () {
+        io.fireEvent('connection', io)
+        io.fireEvent('ahoj', {userId: 'testUserId'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId')
+        
+        io.fireEvent('connection', io)
+        io.fireEvent('ahoj', {userId: 'testUserId2'})
+        alertEmitter.addAlert(alert, 'BTCUSD500', 'testUserId2')
+
+        alertEmitter.removeAlert('BTCUSD500', 'testUserId');
+        alertEmitter.removeAlert('BTCUSD500', 'testUserId2');
+
+        assert.equal(alertEmitter.rooms.size, 0);
+        assert.equal(alertEmitter.alerts.size, 0);
+    });
 });
