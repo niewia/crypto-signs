@@ -22,9 +22,9 @@ npm test
 ```
 ### 5. Generate coverage raport:
 ```
-npm test
+npm run coverage
 ```
 ### 5. Run integration tests:
 ```
-npm test-integration
+npm run test-integration
 ```
